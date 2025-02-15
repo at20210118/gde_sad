@@ -9,6 +9,9 @@ class Location extends Model
 {
     /** @use HasFactory<\Database\Factories\LocationFactory> */
     use HasFactory;
+    protected $fillable = [
+        'adress'
+    ];
 public function events(){
     return $this->hasMany(Event::class);
 }
