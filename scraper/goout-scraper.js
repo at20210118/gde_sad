@@ -1,7 +1,14 @@
 const puppeteer = require('puppeteer');
+const { executablePath } = require('puppeteer');
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  executablePath: executablePath()
+});
+
+
   const page = await browser.newPage();
   
   await page.goto('https://goout.rs/', { waitUntil: 'domcontentloaded' });
@@ -16,16 +23,15 @@ const puppeteer = require('puppeteer');
     }));
   });
 
-  console.log('Pronađeno događaja:', events.length);
   
-  const concurrency = 5;
+  const concurrency = 2;
   let eventsData = [];
 
   for (let i = 0; i < events.length; i += concurrency) {
     const chunk = events.slice(i, i + concurrency);
 
     const results = await Promise.all(chunk.map(async ({ title, url }) => {
-      console.log(`Obrada događaja: ${title} (${url})`);
+      
 
       const eventPage = await browser.newPage();
       await eventPage.goto(url, { waitUntil: 'domcontentloaded' });
@@ -51,7 +57,8 @@ const puppeteer = require('puppeteer');
             .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Lokacija')
             ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || 'N/A';
 
-          return { event: naslov, place: lokacija, category: tagovi, date: datum, event_start: vreme, location: adresa };
+          let eventStart = `${datum} ${vreme}`.trim();
+          return { event: naslov, place: lokacija, category: tagovi, event_start: eventStart, location: adresa };
         });
 
         await eventPage.close();
@@ -67,6 +74,7 @@ const puppeteer = require('puppeteer');
     eventsData.push(...results.filter(event => event !== null));
   }
 
-  console.log('Konačni podaci:', eventsData);
+  console.log(JSON.stringify(eventsData,null,2));
+
   await browser.close();
 })();
