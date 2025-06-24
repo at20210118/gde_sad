@@ -17,6 +17,8 @@ Route::get('/users', function () {
     ]);
 });
 
+Route::apiResource('events', EventController::class);
+
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,8 +26,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::group(['middleware' => ['auth:sanctum']], function () {
     
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::patch('/change-password', [AuthController::class, 'changePassword']);
 });
-Route::get('/event/{id}',[EventController::class,'getById']);
 
 Route::get('/scrape', function () {
     set_time_limit(400);
