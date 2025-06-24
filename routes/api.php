@@ -19,6 +19,8 @@ Route::get('/users', function () {
 
 Route::apiResource('events', EventController::class);
 
+Route::get('/events/category/{categoryName}', [EventController::class, 'showByCategory']);
+
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/login', [AuthController::class, 'login']);

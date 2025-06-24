@@ -14,8 +14,22 @@ class EventController extends Controller
 {
     public function index()
     {
-        $events = DB::select('SELECT event, l.adress, c.name as category FROM events e join locations l on e.location_id=l.id join categories c on e.category_id=c.id');
-        return response()->json($events);
+        $perPage = 10;
+        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+        $offset = ($page - 1) * $perPage;
+
+        $total = DB::table('events')->count();
+
+        $events = DB::select(
+        'SELECT e.place,event, e.event_start,l.adress, c.name as category FROM events e join locations l on e.location_id=l.id join categories c on e.category_id=c.id ORDER BY e.event_start ASC LIMIT ? OFFSET ?', [$perPage, $offset]);
+
+        return response()->json([
+        'current_page' => $page,
+        'per_page' => $perPage,
+        'total' => $total,
+        'last_page' => ceil($total / $perPage),
+        'data' => $events,
+        ]);
     }
     public function show ($id)
     {
@@ -86,4 +100,17 @@ class EventController extends Controller
 
         return response()->json(['message' => 'Događaj ažuriran', 'event' => $event]);
     }
+    public function showByCategory($categoryName)
+    {
+    $category = Category::where('name', $categoryName)->first();
+
+    if (!$category) {
+        return response()->json(['message' => 'Kategorija nije pronađena'], 404);
+    }
+
+     $event=DB::select('SELECT e.place,event, e.event_start,l.adress, c.name as category FROM events e join locations l on e.location_id=l.id join categories c on e.category_id=c.id where e.category_id=?',[$category->id]);
+     
+     return response()->json($event);
+    }
+
 }
