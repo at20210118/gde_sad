@@ -10,6 +10,8 @@ use App\Models\Location;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\LocationController;
 
 Route::get('/users', function () {
     return response()->json([
@@ -18,6 +20,12 @@ Route::get('/users', function () {
 });
 
 Route::apiResource('events', EventController::class);
+
+
+
+Route::apiResource('categories', CategoryController::class);
+
+Route::apiResource('locations', LocationController::class);
 
 Route::get('/events/category/{categoryName}', [EventController::class, 'showByCategory']);
 
@@ -72,6 +80,6 @@ Route::get('/scrape', function () {
         ]);
     }
 
-    return response()->json(['message' => 'Uspesno ubačeni događaji.']);
+    return response()->json(['message' => 'Uspesno ubaceni dogadjaji.']);
 });
 
