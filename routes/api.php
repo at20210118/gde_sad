@@ -27,7 +27,6 @@ Route::apiResource('categories', CategoryController::class);
 
 Route::apiResource('locations', LocationController::class);
 
-Route::get('/events/category/{categoryName}', [EventController::class, 'showByCategory']);
 
 Route::post('/register', [AuthController::class, 'register']);
 
@@ -37,6 +36,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::patch('/change-password', [AuthController::class, 'changePassword']);
+    Route::get('/events/category/{categoryName}', [EventController::class, 'showByCategory']);
 });
 
 Route::get('/scrape', function () {

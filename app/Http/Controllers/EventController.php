@@ -100,7 +100,7 @@ class EventController extends Controller
 
         return response()->json(['message' => 'Događaj ažuriran', 'event' => $event]);
     }
-    public function showByCategory($categoryName)
+ public function showByCategory($categoryName)
     {
     $category = Category::where('name', $categoryName)->first();
 
