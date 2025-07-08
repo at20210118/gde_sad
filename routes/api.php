@@ -40,6 +40,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 Route::get('/scrape', function () {
+    try {
     set_time_limit(400);
 
     $output = null;
@@ -48,7 +49,7 @@ Route::get('/scrape', function () {
     exec('node ' . base_path('scraper/goout-scraper.js'), $output, $return_var);
 
     if ($return_var !== 0) {
-        return response()->json(['error' => 'Greška u izvršavanju skripte', 'output' => $output], 500);
+        return response()->json(['error' => 'Greska u izvrsavanju skripte', 'output' => $output], 500);
     }
 
     $jsonString = implode("", $output);
@@ -81,5 +82,13 @@ Route::get('/scrape', function () {
     }
 
     return response()->json(['message' => 'Uspesno ubaceni dogadjaji.']);
+    }
+    catch (\Throwable $e) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Doslo je do greske.',
+            'details' => $e->getMessage(),
+        ], 500);
+    }
 });
 

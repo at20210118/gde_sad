@@ -14,6 +14,7 @@ class EventController extends Controller
 {
     public function index()
     {
+        try{
         $perPage = 10;
         $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
         $offset = ($page - 1) * $perPage;
@@ -30,14 +31,30 @@ class EventController extends Controller
         'last_page' => ceil($total / $perPage),
         'data' => $events,
         ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska prilikom dohvatanja dogadjaja.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
     public function show ($id)
-    {
+    { try{
         $event=DB::select('SELECT e.place,event, e.event_start,l.adress, c.name as category FROM events e join locations l on e.location_id=l.id join categories c on e.category_id=c.id where e.id=?',[$id]);
         return response()->json($event);
+
+         } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska prilikom prikaza dogadjaja.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
     public function destroy($id)
     {
+        try{
     $deleted = DB::delete('DELETE FROM events WHERE id = ?', [$id]);
 
     if ($deleted) {
@@ -45,11 +62,19 @@ class EventController extends Controller
     } else {
         return response()->json(['error' => 'Događaj nije pronađen'], 404);
     }
+     } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska prilikom brisanja dogadjaja.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
   
     
     public function store(Request $request)
-    {
+    { 
+        try{
         $validated = $request->validate([
             'event' => 'required|string|max:255',
             'place' => 'required|string|max:255',
@@ -70,11 +95,19 @@ class EventController extends Controller
         ]);
 
         return response()->json(['message' => 'Događaj kreiran', 'event' => $event], 201);
+    } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska prilikom kreiranja dogadjaja.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
 
  
     public function update(Request $request, $id)
     {
+        try{
         $event = Event::findOrFail($id);
 
         $validated = $request->validate([
@@ -99,9 +132,16 @@ class EventController extends Controller
         $event->save();
 
         return response()->json(['message' => 'Događaj ažuriran', 'event' => $event]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska prilikom ažuriranja dogadjaja.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
  public function showByCategory($categoryName)
-    {
+    {try {
     $category = Category::where('name', $categoryName)->first();
 
     if (!$category) {
@@ -111,6 +151,13 @@ class EventController extends Controller
      $event=DB::select('SELECT e.place,event, e.event_start,l.adress, c.name as category FROM events e join locations l on e.location_id=l.id join categories c on e.category_id=c.id where e.category_id=?',[$category->id]);
      
      return response()->json($event);
+    }catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska prilikom prikaza dogadjaja po kategoriji.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
 
 }

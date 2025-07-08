@@ -10,13 +10,21 @@ use App\Models\Event;
 class CategoryController extends Controller
 {
     public function index()
-    {
+    { try{
         $categories = Category::all();
         return response()->json($categories);
+     } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska pri ucitavanju kategorija.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function store(Request $request)
     {
+        try{
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
         ]);
@@ -30,10 +38,18 @@ class CategoryController extends Controller
             'updated_at' => $category->updated_at,
         ]
         ], 201);
+    }catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska pri kreiranju kategorije.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function show($id)
     {
+        try{
         $category = Category::find($id);
 
         if (!$category) {
@@ -41,10 +57,18 @@ class CategoryController extends Controller
         }
 
         return response()->json($category);
+    }catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska pri pronalazenju kategorije.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
+        try{
         $category = Category::find($id);
 
         if (!$category) {
@@ -58,10 +82,18 @@ class CategoryController extends Controller
         $category->update($validated);
 
         return response()->json(['message' => 'Category updated', 'category' => $category]);
+    }catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska pri azuriranju kategorije.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function destroy($id)
     {
+        try{
         $category = Category::find($id);
 
         if (!$category) {
@@ -71,5 +103,12 @@ class CategoryController extends Controller
         $category->delete();
 
         return response()->json(['message' => 'Category deleted']);
+    }catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska pri brisanju kategorije.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
