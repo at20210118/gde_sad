@@ -15,6 +15,7 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        try{
         $validator = Validator::make($request->all(), [
             'name'=>'required|string|max:255',
             'email' => 'required|string|max:255|email|unique:users',
@@ -37,11 +38,20 @@ class AuthController extends Controller
 
     return response()
     ->json(['data' => $user, 'access_token' => $token,'token_type' => 'Bearer',]);
-    }
+     
+} catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska tokom registracije.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+}
 
 
     public function login(Request $request)
     {
+        try{
         if (!Auth::attempt($request->only('email', 'password'))) 
 	  {
             return response()->json(['message' => 'Unauthorized'], 401);
@@ -52,15 +62,32 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json(['message' => 'Hi '. $user->name, 'access_token' => $token, 'token_type' =>'Bearer',]);
+
+    } catch(\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska tokom prijave.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 
 
     function logout(Request $request){
+        try{
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message'=>'You have been successfully logged out'],200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska tokom odjavljivanja.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
     public function changePassword(Request $request)
     {
+        try{
     $request->validate([
         'current_password' => 'required|string',
         'new_password' => 'required|string|min:8|confirmed',
@@ -75,7 +102,13 @@ class AuthController extends Controller
     $user->password = bcrypt($request->new_password);
     $user->save();
 
-    return response()->json(['message' => 'Lozinka uspešno promenjena.']);
+    return response()->json(['message' => 'Lozinka uspesno promenjena.']);
+    } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Greska pri promeni lozinke.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
-
 }
