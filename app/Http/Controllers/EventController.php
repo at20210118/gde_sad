@@ -16,6 +16,7 @@ class EventController extends Controller
     {
         $perPage = 10;
         $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+        //da se pristupi drugoj strani ukuca se pored urla ?page=2
         $offset = ($page - 1) * $perPage;
 
         $total = DB::table('events')->count();

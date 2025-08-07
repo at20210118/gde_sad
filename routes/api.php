@@ -45,7 +45,7 @@ Route::get('/scrape', function () {
     $output = null;
     $return_var = null;
 
-    exec('node ' . base_path('scraper/goout-scraper.js'), $output, $return_var);
+    exec('node ' . base_path('scraper/scraper.js'), $output, $return_var);
 
     if ($return_var !== 0) {
         return response()->json(['error' => 'Greška u izvršavanju skripte', 'output' => $output], 500);
