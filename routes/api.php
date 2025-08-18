@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Http\Controllers\API\CategoryController;
-use App\Http\Controllers\API\LocationController;
+use App\Http\Controllers\API\ScraperController;
+
 
 Route::get('/users', function () {
     return response()->json([
@@ -39,56 +40,4 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/events/category/{categoryName}', [EventController::class, 'showByCategory']);
 });
 
-Route::get('/scrape', function () {
-    try {
-    set_time_limit(400);
-
-    $output = null;
-    $return_var = null;
-
-    exec('node ' . base_path('scraper/scraper.js'), $output, $return_var);
-
-    if ($return_var !== 0) {
-        return response()->json(['error' => 'Greska u izvrsavanju skripte', 'output' => $output], 500);
-    }
-
-    $jsonString = implode("", $output);
-    $events = json_decode($jsonString, true);
-
-    if (!$events) {
-        return response()->json(['error' => 'Neispravan JSON format ili prazan rezultat.'], 500);
-    }
-
-     \App\Models\Event::truncate();
-
-    foreach ($events as $event) {
-     
-        $categoryName = $event['category'][0] ?? 'Ostalo';
-        $category = Category::firstOrCreate(['name' => $categoryName]);
-
-       
-        $location = Location::firstOrCreate([
-            'adress' => $event['location'],
-        ]);
-
-     
-        Event::create([
-            'event' => $event['event'],
-            'place' => $event['place'],
-            'event_start' => $event['event_start'],
-            'category_id' => $category->id,
-            'location_id' => $location->id,
-        ]);
-    }
-
-    return response()->json(['message' => 'Uspesno ubaceni dogadjaji.']);
-    }
-    catch (\Throwable $e) {
-        return response()->json([
-            'error' => true,
-            'message' => 'Doslo je do greske.',
-            'details' => $e->getMessage(),
-        ], 500);
-    }
-});
-
+Route::get('/scrape',[ScraperController::class,'scrape']);

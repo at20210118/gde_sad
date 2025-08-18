@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('place');
             $table->string('event');
+            $table->unique(['event', 'event_start', 'place']); 
             $table->string('description');
             $table->dateTime('event_start');
             $table->foreignId('category_id')->nullable();

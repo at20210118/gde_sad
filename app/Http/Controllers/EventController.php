@@ -87,7 +87,7 @@ class EventController extends Controller
         $category = Category::firstOrCreate(['name' => $validated['category']]);
         $location = Location::firstOrCreate(['adress' => $validated['location']]);
 
-        $event = Event::create([
+        $event = Event::firstOrCreate([
             'event' => $validated['event'],
             'place' => $validated['place'],
             'event_start' => $validated['event_start'],
