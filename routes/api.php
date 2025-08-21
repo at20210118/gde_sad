@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\API\LocationController;
 use App\Models\Event;
 use App\Models\Category;
 use App\Models\Location;
