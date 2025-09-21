@@ -20,14 +20,22 @@ Route::get('/users', function () {
         'users' => \App\Models\User::all(),
     ]);
 });
+Route::middleware(['auth:sanctum',  \App\Http\Middleware\AdminMiddleware::class])->group(function () {
+    Route::post('/events', [EventController::class, 'store']);
+    Route::put('/events/{event}', [EventController::class, 'update']);
+    Route::delete('/events/{event}', [EventController::class, 'destroy']);
 
-Route::apiResource('events', EventController::class);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
+    Route::post('/locations', [LocationController::class, 'store']);
+    Route::put('/locations/{location}', [LocationController::class, 'update']);
+    Route::delete('/locations/{location}', [LocationController::class, 'destroy']);
+    
+    Route::get('/scrape',[ScraperController::class,'scrape']);
+});
 
-
-Route::apiResource('categories', CategoryController::class);
-
-Route::apiResource('locations', LocationController::class);
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -41,4 +49,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/events/category/{categoryName}', [EventController::class, 'showByCategory']);
 });
 
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/locations', [LocationController::class, 'index']);
 Route::get('/scrape',[ScraperController::class,'scrape']);
