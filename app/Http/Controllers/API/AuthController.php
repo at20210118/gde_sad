@@ -14,59 +14,78 @@ use Illuminate\Validation\Rules\Password;
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
-        try{
+{
+    try {
         $validator = Validator::make($request->all(), [
-            'name'=>'required|string|max:255',
-            'email' => 'required|string|max:255|email|unique:users',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|max:255|email|unique:users,email',
             'password' => [
                 'required',
                 'string',
                 Password::min(8)->mixedCase()->numbers()
             ],
+        ], [
+            'name.required' => 'Ime je obavezno.',
+            'name.string' => 'Ime mora biti tekst.',
+            'name.max' => 'Ime ne sme biti duže od 255 karaktera.',
+            'email.required' => 'Email je obavezan.',
+            'email.email' => 'Email nije validan.',
+            'email.unique' => 'Ovaj email već postoji.',
+            'password.required' => 'Lozinka je obavezna.',
+            'password.string' => 'Lozinka mora biti tekst.',
+            'password.min' => 'Lozinka mora imati najmanje 8 karaktera.',
         ]);
-        if ($validator->fails())
-        return response()->json($validator->errors());
 
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-    ]);
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
 
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()
-    ->json(['data' => $user, 'access_token' => $token,'token_type' => 'Bearer',]);
-     
-} catch (\Throwable $e) {
             return response()->json([
-                'error' => true,
-                'message' => 'Greska tokom registracije.',
-                'details' => $e->getMessage(),
-            ], 500);
+                'message' => $firstError,
+            ], 422);
         }
-}
 
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Uspešna registracija',
+            'data' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ]);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Greška tokom registracije.',
+            'details' => $e->getMessage(),
+        ], 500);
+    }
+}
 
     public function login(Request $request)
     {
         try{
         if (!Auth::attempt($request->only('email', 'password'))) 
 	  {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Pogrešna lozinka ili email'], 401);
         }
 
         $user = User::where('email', $request['email'])->firstOrFail();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['message' => 'Hi '. $user->name, 'access_token' => $token, 'token_type' =>'Bearer',]);
+        return response()->json(['message' => 'Ćao, '. $user->name, 'access_token' => $token, 'token_type' =>'Bearer',]);
 
     } catch(\Throwable $e) {
             return response()->json([
                 'error' => true,
-                'message' => 'Greska tokom prijave.',
+                'message' => 'Greška tokom prijave.',
                 'details' => $e->getMessage(),
             ], 500);
         }
@@ -76,11 +95,11 @@ class AuthController extends Controller
     function logout(Request $request){
         try{
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message'=>'You have been successfully logged out'],200);
+        return response()->json(['message'=>'Uspešno ste se izlogovali'],200);
         } catch (\Throwable $e) {
             return response()->json([
                 'error' => true,
-                'message' => 'Greska tokom odjavljivanja.',
+                'message' => 'Greška tokom odjavljivanja.',
                 'details' => $e->getMessage(),
             ], 500);
         }
@@ -102,7 +121,7 @@ class AuthController extends Controller
     $user->password = bcrypt($request->new_password);
     $user->save();
 
-    return response()->json(['message' => 'Lozinka uspesno promenjena.']);
+    return response()->json(['message' => 'Lozinka uspešno promenjena.']);
     } catch (\Throwable $e) {
             return response()->json([
                 'error' => true,
