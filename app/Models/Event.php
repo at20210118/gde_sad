@@ -9,7 +9,7 @@ class Event extends Model
 {
     /** @use HasFactory<\Database\Factories\EventFactory> */
     use HasFactory;
-    protected $fillable=['place','event','description','event_start','category_id','location_id'];
+    protected $fillable=['place','event','description','event_start','category_id','location_id','image'];
 
     public function category(){
         return $this->hasMany(Category::class);

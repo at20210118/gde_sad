@@ -11,7 +11,7 @@ const { executablePath } = require('puppeteer');
   const allEvents = [];
 
   const gooutPage = await browser.newPage();
-  await gooutPage.goto('https://goout.rs/', { waitUntil: 'domcontentloaded' });
+  await gooutPage.goto('https://goout.rs/', { waitUntil: 'domcontentloaded', timeout: 60000  });
 
   await gooutPage.waitForSelector('.MuiTypography-eventTitle', { timeout: 10000 });
 
@@ -32,6 +32,8 @@ const { executablePath } = require('puppeteer');
         await eventPage.goto(url, { waitUntil: 'networkidle0' });
 
         const eventData = await eventPage.evaluate(() => {
+          
+          
           let naslov = document.querySelector('h1')?.innerText.trim() || '';
           let lokacija = document.querySelector('h3')?.innerText.trim() || '';
           let tagovi = Array.from(document.querySelectorAll('a.css-f3f42o span')).map(tag => tag.innerText.trim());
@@ -47,9 +49,20 @@ const { executablePath } = require('puppeteer');
           let adresa = [...document.querySelectorAll('.css-1el6dq')]
             .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Lokacija')
             ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
+           let imageEl = document.querySelector('#eventImage');
+let image = "";
+if (imageEl) {
+  const rawSrc = imageEl.getAttribute('src'); 
+  const match = rawSrc.match(/url=(.*?)&/);
+  if (match && match[1]) {
+    image = decodeURIComponent(match[1]);
+  } else {
+    image = rawSrc; // fallback, makar neka putanja
+  }
+}
 
           let eventStart = `${datum} ${vreme}`.trim();
-          return { event: naslov, place: lokacija, category: tagovi, event_start: eventStart, location: adresa };
+          return { event: naslov, place: lokacija, category: tagovi, event_start: eventStart, location: adresa ,image:image};
         });
 
         await eventPage.close();
@@ -88,11 +101,21 @@ const { executablePath } = require('puppeteer');
         .find(div => div.innerText.includes('Vreme:'));
       const time = timeDiv ? timeDiv.innerText.replace('Vreme:', '').trim() : '';
 
-      const locationDiv = [...event.querySelectorAll('div')]
-        .find(div => div.innerText.includes('Mesto:'));
-      const location = locationDiv ? locationDiv.innerText.replace('Mesto:', '').trim() : '';
+     const locationDiv = [...event.querySelectorAll('div')]
+     .find(div => div.innerText.includes('Mesto:'));
 
-      const tags = [...event.querySelectorAll('.mt1 .dib')].map(tag => tag.innerText.trim());
+     let location = '';
+    if (locationDiv) {
+    const firstLink = locationDiv.querySelector('a'); 
+    location = firstLink ? firstLink.innerText.trim() : '';
+    }
+    const imageElement = event.closest('.colx.w-75')?.previousElementSibling?.querySelector('img.imgx');
+    let imagePath = null; 
+     if (imageElement) {
+      imagePath = imageElement.getAttribute('src');
+    }
+
+     const tags = [...event.querySelectorAll('.mt1 .dib')].map(tag => tag.innerText.trim());
 
       const eventStart = `${formattedDate} ${time}`.trim();
 
@@ -102,6 +125,7 @@ const { executablePath } = require('puppeteer');
         category: tags,
         event_start: eventStart,
         location: location,
+        image:"https://belgrade-beat.rs"+ imagePath,
       });
     });
 

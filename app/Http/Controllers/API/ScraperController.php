@@ -57,6 +57,7 @@ class ScraperController extends Controller{
             'event_start' => $event['event_start'],
             'category_id' => $category->id,
             'location_id' => $location->id,
+            'image'=>$event['image']??null,
         ]);
     }
 
