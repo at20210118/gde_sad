@@ -13,7 +13,7 @@ const { executablePath } = require('puppeteer');
   const gooutPage = await browser.newPage();
   await gooutPage.goto('https://goout.rs/', { waitUntil: 'domcontentloaded', timeout: 60000  });
 
-  await gooutPage.waitForSelector('.MuiTypography-eventTitle', { timeout: 10000 });
+  await gooutPage.waitForSelector('.MuiTypography-eventTitle', { timeout: 30000 });
 
   const gooutEvents = await gooutPage.$$eval('a[href*="/event/"]', (elements) => {
     return elements.map((el) => ({
