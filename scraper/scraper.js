@@ -10,10 +10,10 @@ const { executablePath } = require('puppeteer');
 
   const allEvents = [];
 
+  // GOOUT
   const gooutPage = await browser.newPage();
-  await gooutPage.goto('https://goout.rs/', { waitUntil: 'domcontentloaded', timeout: 60000  });
-
-  await gooutPage.waitForSelector('.MuiTypography-eventTitle', { timeout: 30000 });
+  await gooutPage.goto('https://goout.rs/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await gooutPage.waitForSelector('.MuiTypography-eventTitle', { timeout: 0 });
 
   const gooutEvents = await gooutPage.$$eval('a[href*="/event/"]', (elements) => {
     return elements.map((el) => ({
@@ -22,66 +22,63 @@ const { executablePath } = require('puppeteer');
     }));
   });
 
-  const concurrency = 2;
-  for (let i = 0; i < gooutEvents.length; i += concurrency) {
-    const chunk = gooutEvents.slice(i, i + concurrency);
+  // koristimo JEDAN tab za sve detalje
+  const page = await browser.newPage();
 
-    const results = await Promise.all(chunk.map(async ({ title, url }) => {
-      const eventPage = await browser.newPage();
-      try {
-        await eventPage.goto(url, { waitUntil: 'networkidle0' });
+  for (let i = 0; i < gooutEvents.length; i++) {
+    const { title, url } = gooutEvents[i];
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-        const eventData = await eventPage.evaluate(() => {
-          
-          
-          let naslov = document.querySelector('h1')?.innerText.trim() || '';
-          let lokacija = document.querySelector('h3')?.innerText.trim() || '';
-          let tagovi = Array.from(document.querySelectorAll('a.css-f3f42o span')).map(tag => tag.innerText.trim());
+      // čekamo da se pojavi h1 i sekcija sa detaljima
+      await page.waitForSelector('h1', { timeout: 10000 });
+      await page.waitForSelector('.MuiTypography-whenAndWhereTitle', { timeout: 10000 });
 
-          let datum = [...document.querySelectorAll('.css-1el6dq')]
-            .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Datum')
-            ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
+      const eventData = await page.evaluate(() => {
+        let naslov = document.querySelector('h1')?.innerText.trim() || '';
+        let lokacija = document.querySelector('h3')?.innerText.trim() || '';
+        let tagovi = Array.from(document.querySelectorAll('a.css-f3f42o span')).map(tag => tag.innerText.trim());
 
-          let vreme = [...document.querySelectorAll('.css-1el6dq')]
-            .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Vreme')
-            ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
+        let datum = [...document.querySelectorAll('.css-1el6dq')]
+          .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Datum')
+          ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
 
-          let adresa = [...document.querySelectorAll('.css-1el6dq')]
-            .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Lokacija')
-            ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
-           let imageEl = document.querySelector('#eventImage');
-let image = "";
-if (imageEl) {
-  const rawSrc = imageEl.getAttribute('src'); 
-  const match = rawSrc.match(/url=(.*?)&/);
-  if (match && match[1]) {
-    image = decodeURIComponent(match[1]);
-  } else {
-    image = rawSrc; // fallback, makar neka putanja
-  }
-}
+        let vreme = [...document.querySelectorAll('.css-1el6dq')]
+          .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Vreme')
+          ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
 
-          let eventStart = `${datum} ${vreme}`.trim();
-          return { event: naslov, place: lokacija, category: tagovi, event_start: eventStart, location: adresa ,image:image};
-        });
+        let adresa = [...document.querySelectorAll('.css-1el6dq')]
+          .find(el => el.querySelector('.MuiTypography-whenAndWhereTitle')?.innerText.trim() === 'Lokacija')
+          ?.querySelector('.MuiTypography-whenAndWhereContent')?.innerText.trim() || '';
 
-        await eventPage.close();
-        return eventData;
-      } catch (error) {
-        console.error(`Greška pri skrejpovanju događaja: ${title} (${url})`);
-        console.error(error);
-        await eventPage.close();
-        return null;
-      }
-    }));
+        let imageEl = document.querySelector('#eventImage');
+        let image = "";
+        if (imageEl) {
+          const rawSrc = imageEl.getAttribute('src');
+          const match = rawSrc.match(/url=(.*?)&/);
+          image = match && match[1] ? decodeURIComponent(match[1]) : rawSrc;
+        }
 
-    allEvents.push(...results.filter(e => e !== null));
+        let eventStart = `${datum} ${vreme}`.trim();
+        return {
+          event: naslov,
+          place: lokacija,
+          category: tagovi,
+          event_start: eventStart,
+          location: adresa,
+          image
+        };
+      });
+
+      allEvents.push(eventData);
+    } catch (err) {
+      console.error(`Greška pri ${title}:`, err.message);
+    }
   }
 
-  
+  // BELGRADE BEAT
   const beatPage = await browser.newPage();
   await beatPage.goto('https://belgrade-beat.rs/lat/desavanja/danas', { waitUntil: 'domcontentloaded' });
-
   await beatPage.waitForSelector('.colx.w-75', { timeout: 10000 });
 
   const today = new Date();
@@ -101,21 +98,22 @@ if (imageEl) {
         .find(div => div.innerText.includes('Vreme:'));
       const time = timeDiv ? timeDiv.innerText.replace('Vreme:', '').trim() : '';
 
-     const locationDiv = [...event.querySelectorAll('div')]
-     .find(div => div.innerText.includes('Mesto:'));
+      const locationDiv = [...event.querySelectorAll('div')]
+        .find(div => div.innerText.includes('Mesto:'));
 
-     let location = '';
-    if (locationDiv) {
-    const firstLink = locationDiv.querySelector('a'); 
-    location = firstLink ? firstLink.innerText.trim() : '';
-    }
-    const imageElement = event.closest('.colx.w-75')?.previousElementSibling?.querySelector('img.imgx');
-    let imagePath = null; 
-     if (imageElement) {
-      imagePath = imageElement.getAttribute('src');
-    }
+      let location = '';
+      if (locationDiv) {
+        const firstLink = locationDiv.querySelector('a');
+        location = firstLink ? firstLink.innerText.trim() : '';
+      }
 
-     const tags = [...event.querySelectorAll('.mt1 .dib')].map(tag => tag.innerText.trim());
+      const imageElement = event.closest('.colx.w-75')?.previousElementSibling?.querySelector('img.imgx');
+      let imagePath = null;
+      if (imageElement) {
+        imagePath = imageElement.getAttribute('src');
+      }
+
+      const tags = [...event.querySelectorAll('.mt1 .dib')].map(tag => tag.innerText.trim());
 
       const eventStart = `${formattedDate} ${time}`.trim();
 
@@ -125,7 +123,7 @@ if (imageEl) {
         category: tags,
         event_start: eventStart,
         location: location,
-        image:"https://belgrade-beat.rs"+ imagePath,
+        image: "https://belgrade-beat.rs" + imagePath,
       });
     });
 
@@ -134,7 +132,6 @@ if (imageEl) {
 
   allEvents.push(...beatEvents);
 
-  
   console.log(JSON.stringify(allEvents, null, 2));
 
   await browser.close();
