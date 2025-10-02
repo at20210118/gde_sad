@@ -21,7 +21,6 @@ const { executablePath } = require('puppeteer');
     }));
   });
 
-  // koristimo JEDAN tab za sve detalje
   const page = await browser.newPage();
 
   for (let i = 0; i < gooutEvents.length; i++) {
@@ -29,7 +28,6 @@ const { executablePath } = require('puppeteer');
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-      // čekamo da se pojavi h1 i sekcija sa detaljima
       await page.waitForSelector('h1', { timeout: 10000 });
       await page.waitForSelector('.MuiTypography-whenAndWhereTitle', { timeout: 10000 });
 
@@ -75,7 +73,6 @@ const { executablePath } = require('puppeteer');
     }
   }
 
-  // BELGRADE BEAT
   const beatPage = await browser.newPage();
   await beatPage.goto('https://belgrade-beat.rs/lat/desavanja/danas', { waitUntil: 'domcontentloaded' });
   await beatPage.waitForSelector('.colx.w-75', { timeout: 10000 });

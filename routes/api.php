@@ -42,3 +42,4 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::resource('events', EventController::class)->only(['index', 'show']);
 Route::resource('categories', CategoryController::class)->only(['index', 'show']);
 Route::resource('locations', LocationController::class)->only(['index', 'show']);
+Route::get('/scrape',[ScraperController::class,'scrape']);
